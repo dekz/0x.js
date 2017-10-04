@@ -153,9 +153,11 @@ describe('ExchangeWrapper', () => {
                     expect(await zeroEx.token.getBalanceAsync(takerTokenAddress, takerAddress))
                         .to.be.bignumber.equal(fillableAmount.minus(fillTakerAmount));
                 });
-                it('should partially fill a valid order', async () => {
+                it.only('should partially fill a valid order', async () => {
                     const partialFillAmount = new BigNumber(3);
-                    await zeroEx.exchange.fillOrKillOrderAsync(signedOrder, partialFillAmount, takerAddress);
+                    await zeroEx.exchange.fillOrKillOrderAsync(signedOrder, partialFillAmount, takerAddress, {
+                        shouldValidate: false,
+                    });
                     expect(await zeroEx.token.getBalanceAsync(makerTokenAddress, makerAddress))
                         .to.be.bignumber.equal(fillableAmount.minus(partialFillAmount));
                     expect(await zeroEx.token.getBalanceAsync(takerTokenAddress, makerAddress))
