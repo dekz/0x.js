@@ -155,6 +155,7 @@ describe('ExchangeWrapper', () => {
                 });
                 it.only('should partially fill a valid order', async () => {
                     const partialFillAmount = new BigNumber(3);
+                    // This operation should succeed, so disabling validation should not affect anything.
                     await zeroEx.exchange.fillOrKillOrderAsync(signedOrder, partialFillAmount, takerAddress, {
                         shouldValidate: false,
                     });
