@@ -1,7 +1,7 @@
 import {_} from '../utils/lodash';
 import * as Web3 from 'web3';
 import * as uuid from 'uuid/v4';
-import * as ethUtil from 'ethereumjs-util';
+import {ethUtil} from './eth_util';
 import * as jsSHA3 from 'js-sha3';
 import {ContractEvents, IndexedFilterValues, SubscriptionOpts} from '../types';
 

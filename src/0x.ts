@@ -2,7 +2,7 @@ import {_} from './utils/lodash';
 import * as BigNumber from 'bignumber.js';
 import {SchemaValidator, schemas} from '0x-json-schemas';
 import {bigNumberConfigs} from './bignumber_config';
-import * as ethUtil from 'ethereumjs-util';
+import {ethUtil} from './utils/eth_util';
 import {Web3Wrapper} from './web3_wrapper';
 import {constants} from './utils/constants';
 import {utils} from './utils/utils';

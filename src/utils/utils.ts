@@ -1,6 +1,6 @@
 import {_} from '../utils/lodash';
 import * as ethABI from 'ethereumjs-abi';
-import * as ethUtil from 'ethereumjs-util';
+import {ethUtil} from './eth_util';
 import {Order, SignedOrder, SolidityTypes} from '../types';
 import * as BigNumber from 'bignumber.js';
 import BN = require('bn.js');

@@ -31,6 +31,8 @@ module.exports = {
             sourceMap: true,
             include: /\.min\.js$/,
         }),
+        new webpack.IgnorePlugin(/crypto-js/),
+        new webpack.IgnorePlugin(/ripemd160/),
     ],
     module: {
         rules: [

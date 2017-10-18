@@ -1,4 +1,4 @@
-import * as ethUtil from 'ethereumjs-util';
+import {ethUtil} from './eth_util';
 import {ECSignature} from '../types';
 
 export const signatureUtils = {

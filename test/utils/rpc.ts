@@ -1,4 +1,4 @@
-import * as ethUtil from 'ethereumjs-util';
+import {ethUtil} from '../../src/utils/eth_util';
 import * as request from 'request-promise-native';
 import {constants} from './constants';
 
@@ -41,7 +41,7 @@ export class RPC {
             uri: `http://${this.host}:${this.port}`,
             body: payload,
             headers: {
-                'content-type': 'application/json'
+                'content-type': 'application/json',
             },
         };
         const bodyString = await request(opts);
