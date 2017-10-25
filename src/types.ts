@@ -401,8 +401,6 @@ export interface ZeroExConfig {
     etherTokenContractAddress?: string;
 }
 
-export type TransactionReceipt = Web3.TransactionReceipt;
-
 export enum AbiType {
     Function = 'function',
     Constructor = 'constructor',
@@ -421,7 +419,7 @@ export interface DecodedArgs<ArgsType> {
 
 export interface LogWithDecodedArgs<ArgsType> extends Web3.LogEntry, DecodedArgs<ArgsType> {}
 
-export interface TransactionReceiptWithDecodedLogs extends Web3.TransactionReceipt {
+export interface TransactionReceiptWithDecodedLogs extends TransactionReceipt {
     logs: Array<LogWithDecodedArgs<DecodedLogArgs>|Web3.LogEntry>;
 }
 
@@ -470,4 +468,18 @@ export enum TradeSide {
 export enum TransferType {
     Trade = 'trade',
     Fee = 'fee',
+}
+
+export interface TransactionReceipt {
+    blockHash: string;
+    blockNumber: number;
+    transactionHash: string;
+    transactionIndex: number;
+    from: string;
+    to: string;
+    status: null|0|1;
+    cumulativeGasUsed: number;
+    gasUsed: number;
+    contractAddress: string|null;
+    logs: Web3.LogEntry[];
 }
