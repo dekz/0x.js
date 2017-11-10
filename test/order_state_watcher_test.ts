@@ -217,7 +217,7 @@ describe('OrderStateWatcher', () => {
                     expect(invalidOrderState.error).to.be.equal(ExchangeContractErrs.OrderRemainingFillAmountZero);
                     done();
                 });
-                zeroEx.orderStateWatcher.subscribe(callback, numConfirmations);
+                zeroEx.orderStateWatcher.subscribe(callback);
 
                 const shouldThrowOnInsufficientBalanceOrAllowance = true;
                 await zeroEx.exchange.cancelOrderAsync(signedOrder, fillableAmount);
@@ -244,7 +244,7 @@ describe('OrderStateWatcher', () => {
                     expect(orderRelevantState.canceledTakerTokenAmount).to.be.bignumber.equal(cancelAmountInBaseUnits);
                     done();
                 });
-                zeroEx.orderStateWatcher.subscribe(callback, numConfirmations);
+                zeroEx.orderStateWatcher.subscribe(callback);
                 await zeroEx.exchange.cancelOrderAsync(signedOrder, cancelAmountInBaseUnits);
             })().catch(done);
         });
