@@ -399,11 +399,13 @@ export interface JSONRPCPayload {
 }
 
 /*
- * pollingIntervalMs: How often to poll the Ethereum node for new events
+ * eventPollingIntervalMs: How often to poll the Ethereum node for new events
+ * blockPollingIntervalMs: How often to poll the Ethereum node for new blocks
  */
 export interface OrderStateWatcherConfig {
-    pollingIntervalMs?: number;
-    numConfirmations: number;
+    eventPollingIntervalMs?: number;
+    blockPollingIntervalMs?: number;
+    numConfirmations?: number;
 }
 
 /*
