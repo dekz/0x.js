@@ -17,12 +17,14 @@ export enum ZeroExError {
     NoNetworkId = 'NO_NETWORK_ID',
     SubscriptionNotFound = 'SUBSCRIPTION_NOT_FOUND',
     SubscriptionAlreadyPresent = 'SUBSCRIPTION_ALREADY_PRESENT',
+    FailedToFetchLatestBlock = 'FAILED_TO_FETCH_LATEST_BLOCK',
 }
 
 export enum InternalZeroExError {
     NoAbiDecoder = 'NO_ABI_DECODER',
     ZrxNotInTokenRegistry = 'ZRX_NOT_IN_TOKEN_REGISTRY',
     LatestBlockNumberNotSet = 'LATEST_BLOCK_NUMBER_NOT_SET',
+    Web3WrapperRequiredToStartBlockStore = 'WEB3_WRAPPER_REQUIRED_TO_START_BLOCK_STORE',
 }
 
 /**
