@@ -14,6 +14,7 @@ import {
     DecodedLogEvent,
     OrderState,
     SignedOrder,
+    ZeroExError,
     OrderStateValid,
     OrderStateInvalid,
     ExchangeContractErrs,
@@ -88,14 +89,10 @@ describe('OrderStateWatcher', () => {
         afterEach(async () => {
             zeroEx.orderStateWatcher.unsubscribe();
         });
-        it('should fail when trying to subscribe twice', (done: DoneCallback) => {
-            zeroEx.orderStateWatcher.subscribe(_.noop);
-            try {
-                zeroEx.orderStateWatcher.subscribe(_.noop);
-                done(new Error('Expected the second subscription to fail'));
-            } catch (err) {
-                done();
-            }
+        it('should fail when trying to subscribe twice', async () => {
+            await zeroEx.orderStateWatcher.subscribeAsync(_.noop);
+            return expect(zeroEx.orderStateWatcher.subscribeAsync(_.noop))
+                .to.be.rejectedWith(ZeroExError.SubscriptionAlreadyPresent);
         });
     });
     describe('tests with cleanup', async () => {
@@ -118,7 +115,7 @@ describe('OrderStateWatcher', () => {
                     expect(invalidOrderState.error).to.be.equal(ExchangeContractErrs.InsufficientMakerAllowance);
                     done();
                 });
-                zeroEx.orderStateWatcher.subscribe(callback);
+                await zeroEx.orderStateWatcher.subscribeAsync(callback);
                 await zeroEx.token.setProxyAllowanceAsync(makerToken.address, maker, new BigNumber(0));
             })().catch(done);
         });
@@ -136,7 +133,7 @@ describe('OrderStateWatcher', () => {
                     expect(invalidOrderState.error).to.be.equal(ExchangeContractErrs.InsufficientMakerBalance);
                     done();
                 });
-                zeroEx.orderStateWatcher.subscribe(callback);
+                await zeroEx.orderStateWatcher.subscribeAsync(callback);
                 const anyRecipient = taker;
                 const makerBalance = await zeroEx.token.getBalanceAsync(makerToken.address, maker);
                 await zeroEx.token.transferAsync(makerToken.address, maker, anyRecipient, makerBalance);
@@ -161,7 +158,7 @@ describe('OrderStateWatcher', () => {
                         done();
                     }
                 });
-                zeroEx.orderStateWatcher.subscribe(callback);
+                await zeroEx.orderStateWatcher.subscribeAsync(callback);
 
                 const shouldThrowOnInsufficientBalanceOrAllowance = true;
                 await zeroEx.exchange.fillOrderAsync(
@@ -195,7 +192,7 @@ describe('OrderStateWatcher', () => {
                         done();
                     }
                 });
-                zeroEx.orderStateWatcher.subscribe(callback);
+                await zeroEx.orderStateWatcher.subscribeAsync(callback);
                 const shouldThrowOnInsufficientBalanceOrAllowance = true;
                 await zeroEx.exchange.fillOrderAsync(
                     signedOrder, fillAmountInBaseUnits, shouldThrowOnInsufficientBalanceOrAllowance, taker,
@@ -217,7 +214,7 @@ describe('OrderStateWatcher', () => {
                     expect(invalidOrderState.error).to.be.equal(ExchangeContractErrs.OrderRemainingFillAmountZero);
                     done();
                 });
-                zeroEx.orderStateWatcher.subscribe(callback);
+                await zeroEx.orderStateWatcher.subscribeAsync(callback);
 
                 const shouldThrowOnInsufficientBalanceOrAllowance = true;
                 await zeroEx.exchange.cancelOrderAsync(signedOrder, fillableAmount);
@@ -244,7 +241,7 @@ describe('OrderStateWatcher', () => {
                     expect(orderRelevantState.canceledTakerTokenAmount).to.be.bignumber.equal(cancelAmountInBaseUnits);
                     done();
                 });
-                zeroEx.orderStateWatcher.subscribe(callback);
+                await zeroEx.orderStateWatcher.subscribeAsync(callback);
                 await zeroEx.exchange.cancelOrderAsync(signedOrder, cancelAmountInBaseUnits);
             })().catch(done);
         });
