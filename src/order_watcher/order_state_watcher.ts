@@ -21,6 +21,11 @@ import {
     ZeroExError,
 } from '../types';
 import {Web3Wrapper} from '../web3_wrapper';
+import {BlockStore} from '../stores/block_store';
+import {TokenWrapper} from '../contract_wrappers/token_wrapper';
+import {ExchangeWrapper} from '../contract_wrappers/exchange_wrapper';
+import {OrderFilledCancelledLazyStore} from '../stores/order_filled_cancelled_lazy_store';
+import {BalanceAndProxyAllowanceLazyStore} from '../stores/balance_proxy_allowance_lazy_store';
 
 const DEFAULT_NUM_CONFIRMATIONS = 0;
 
@@ -37,17 +42,17 @@ interface OrderByOrderHash {
 export class OrderStateWatcher {
     private _orders: OrderByOrderHash;
     private _dependentOrderHashes: DependentOrderHashes;
-    private _web3Wrapper: Web3Wrapper;
     private _callbackIfExistsAsync?: OnOrderStateChangeCallback;
     private _eventWatcher: EventWatcher;
     private _abiDecoder: AbiDecoder;
     private _orderStateUtils: OrderStateUtils;
     private _numConfirmations: number;
+    private _orderFilledCancelledLazyStore: OrderFilledCancelledLazyStore;
+    private _balanceAndProxyAllowanceLazyStore: BalanceAndProxyAllowanceLazyStore;
     constructor(
-        web3Wrapper: Web3Wrapper, abiDecoder: AbiDecoder, orderStateUtils: OrderStateUtils,
+        web3Wrapper: Web3Wrapper, abiDecoder: AbiDecoder, token: TokenWrapper, exchange: ExchangeWrapper,
         config?: OrderStateWatcherConfig,
     ) {
-        this._web3Wrapper = web3Wrapper;
         this._orders = {};
         this._dependentOrderHashes = {};
         const eventPollingIntervalMs = _.isUndefined(config) ? undefined : config.pollingIntervalMs;
@@ -55,10 +60,19 @@ export class OrderStateWatcher {
                                     DEFAULT_NUM_CONFIRMATIONS
                                     : config.numConfirmations;
         this._eventWatcher = new EventWatcher(
-            this._web3Wrapper, eventPollingIntervalMs, this._numConfirmations,
+            web3Wrapper, eventPollingIntervalMs, this._numConfirmations,
         );
         this._abiDecoder = abiDecoder;
-        this._orderStateUtils = orderStateUtils;
+        const blockStore = new BlockStore(web3Wrapper);
+        this._balanceAndProxyAllowanceLazyStore = new BalanceAndProxyAllowanceLazyStore(
+            token, blockStore, this._numConfirmations,
+        );
+        this._orderFilledCancelledLazyStore = new OrderFilledCancelledLazyStore(
+            exchange, blockStore, this._numConfirmations,
+        );
+        this._orderStateUtils = new OrderStateUtils(
+            this._balanceAndProxyAllowanceLazyStore, this._orderFilledCancelledLazyStore,
+        );
     }
     /**
      * Add an order to the orderStateWatcher
@@ -166,7 +180,7 @@ export class OrderStateWatcher {
 
         for (const orderHash of orderHashes) {
             const signedOrder = this._orders[orderHash] as SignedOrder;
-            const orderState = await this._orderStateUtils.getOrderStateAsync(signedOrder, methodOpts);
+            const orderState = await this._orderStateUtils.getOrderStateAsync(signedOrder);
             if (!_.isUndefined(this._callbackIfExistsAsync)) {
                 await this._callbackIfExistsAsync(orderState);
             } else {
