@@ -1,4 +1,4 @@
-import { BlockchainLifecycle } from '@0xproject/dev-utils';
+import { BlockchainLifecycle, devConstants, web3Factory } from '@0xproject/dev-utils';
 import { BigNumber } from '@0xproject/utils';
 import * as chai from 'chai';
 import * as _ from 'lodash';
@@ -10,11 +10,12 @@ import { ApprovalContractEventArgs, LogWithDecodedArgs, Order, TokenEvents, Zero
 import { chaiSetup } from './utils/chai_setup';
 import { constants } from './utils/constants';
 import { TokenUtils } from './utils/token_utils';
-import { web3Factory } from './utils/web3_factory';
 
-const blockchainLifecycle = new BlockchainLifecycle(constants.RPC_URL);
+const blockchainLifecycle = new BlockchainLifecycle();
 chaiSetup.configure();
 const expect = chai.expect;
+
+const SHOULD_ADD_PERSONAL_MESSAGE_PREFIX = false;
 
 describe('ZeroEx library', () => {
     const web3 = web3Factory.create();
@@ -198,7 +199,11 @@ describe('ZeroEx library', () => {
                 r: '0x61a3ed31b43c8780e905a260a35faefcc527be7516aa11c0256729b5b351bc33',
                 s: '0x40349190569279751135161d22529dc25add4f6069af05be04cacbda2ace2254',
             };
-            const ecSignature = await zeroEx.signOrderHashAsync(orderHash, makerAddress);
+            const ecSignature = await zeroEx.signOrderHashAsync(
+                orderHash,
+                makerAddress,
+                SHOULD_ADD_PERSONAL_MESSAGE_PREFIX,
+            );
             expect(ecSignature).to.deep.equal(expectedECSignature);
         });
         it('should return the correct ECSignature for signatureHex concatenated as R + S + V', async () => {
@@ -215,7 +220,11 @@ describe('ZeroEx library', () => {
                 Sinon.stub(ZeroEx, 'isValidSignature').returns(true),
             ];
 
-            const ecSignature = await zeroEx.signOrderHashAsync(orderHash, makerAddress);
+            const ecSignature = await zeroEx.signOrderHashAsync(
+                orderHash,
+                makerAddress,
+                SHOULD_ADD_PERSONAL_MESSAGE_PREFIX,
+            );
             expect(ecSignature).to.deep.equal(expectedECSignature);
         });
         it('should return the correct ECSignature for signatureHex concatenated as V + R + S', async () => {
@@ -232,7 +241,11 @@ describe('ZeroEx library', () => {
                 Sinon.stub(ZeroEx, 'isValidSignature').returns(true),
             ];
 
-            const ecSignature = await zeroEx.signOrderHashAsync(orderHash, makerAddress);
+            const ecSignature = await zeroEx.signOrderHashAsync(
+                orderHash,
+                makerAddress,
+                SHOULD_ADD_PERSONAL_MESSAGE_PREFIX,
+            );
             expect(ecSignature).to.deep.equal(expectedECSignature);
         });
     });

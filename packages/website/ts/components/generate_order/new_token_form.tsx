@@ -1,4 +1,3 @@
-import { BigNumber } from '@0xproject/utils';
 import * as _ from 'lodash';
 import TextField from 'material-ui/TextField';
 import * as React from 'react';
@@ -7,13 +6,13 @@ import { AddressInput } from 'ts/components/inputs/address_input';
 import { Alert } from 'ts/components/ui/alert';
 import { LifeCycleRaisedButton } from 'ts/components/ui/lifecycle_raised_button';
 import { RequiredLabel } from 'ts/components/ui/required_label';
-import { AlertTypes, Token, TokenByAddress, TokenState } from 'ts/types';
+import { AlertTypes, Token, TokenByAddress } from 'ts/types';
 import { colors } from 'ts/utils/colors';
 
 interface NewTokenFormProps {
     blockchain: Blockchain;
     tokenByAddress: TokenByAddress;
-    onNewTokenSubmitted: (token: Token, tokenState: TokenState) => void;
+    onNewTokenSubmitted: (token: Token) => void;
 }
 
 interface NewTokenFormState {
@@ -110,13 +109,9 @@ export class NewTokenForm extends React.Component<NewTokenFormProps, NewTokenFor
         }
 
         let hasBalanceAllowanceErr = false;
-        let balance = new BigNumber(0);
-        let allowance = new BigNumber(0);
         if (doesContractExist) {
             try {
-                [balance, allowance] = await this.props.blockchain.getCurrentUserTokenBalanceAndAllowanceAsync(
-                    this.state.address,
-                );
+                await this.props.blockchain.getCurrentUserTokenBalanceAndAllowanceAsync(this.state.address);
             } catch (err) {
                 hasBalanceAllowanceErr = true;
             }
@@ -155,11 +150,7 @@ export class NewTokenForm extends React.Component<NewTokenFormProps, NewTokenFor
             isTracked: true,
             isRegistered: false,
         };
-        const newTokenState: TokenState = {
-            balance,
-            allowance,
-        };
-        this.props.onNewTokenSubmitted(newToken, newTokenState);
+        this.props.onNewTokenSubmitted(newToken);
     }
     private _onTokenNameChanged(e: any, name: string) {
         let nameErrText = '';
@@ -189,8 +180,8 @@ export class NewTokenForm extends React.Component<NewTokenFormProps, NewTokenFor
         const tokenWithSymbolExists = !_.isUndefined(_.find(tokens, { symbol }));
         if (symbol === '') {
             symbolErrText = 'Symbol is required';
-        } else if (!this._isLetters(symbol)) {
-            symbolErrText = 'Can only include letters';
+        } else if (!this._isAlphanumeric(symbol)) {
+            symbolErrText = 'Can only include alphanumeric characters';
         } else if (symbol.length > maxLength) {
             symbolErrText = `Max length is ${maxLength}`;
         } else if (tokenWithSymbolExists) {
@@ -231,7 +222,7 @@ export class NewTokenForm extends React.Component<NewTokenFormProps, NewTokenFor
     private _isInteger(input: string) {
         return /^[0-9]+$/i.test(input);
     }
-    private _isLetters(input: string) {
-        return /^[a-zA-Z]+$/i.test(input);
+    private _isAlphanumeric(input: string) {
+        return /^[a-zA-Z0-9]+$/i.test(input);
     }
 }

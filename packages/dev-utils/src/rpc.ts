@@ -1,11 +1,13 @@
 import * as ethUtil from 'ethereumjs-util';
 import * as request from 'request-promise-native';
 
+import { constants } from './constants';
+
 export class RPC {
     private _url: string;
     private _id: number;
-    constructor(url: string) {
-        this._url = url;
+    constructor() {
+        this._url = constants.RPC_URL;
         this._id = 0;
     }
     public async takeSnapshotAsync(): Promise<number> {
@@ -41,7 +43,7 @@ export class RPC {
             method,
             params,
         });
-        this._url += 1;
+        this._id += 1;
         return payload;
     }
     private async _sendAsync(payload: string): Promise<any> {

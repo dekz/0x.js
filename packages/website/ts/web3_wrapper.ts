@@ -1,6 +1,7 @@
 import { BigNumber, intervalUtils, promisify } from '@0xproject/utils';
 import * as _ from 'lodash';
 import { Dispatcher } from 'ts/redux/dispatcher';
+import { utils } from 'ts/utils/utils';
 import * as Web3 from 'web3';
 
 export class Web3Wrapper {
@@ -23,9 +24,6 @@ export class Web3Wrapper {
 
         this._web3 = new Web3();
         this._web3.setProvider(provider);
-
-        // tslint:disable-next-line:no-floating-promises
-        this._startEmittingNetworkConnectionAndUserBalanceStateAsync();
     }
     public isAddress(address: string) {
         return this._web3.isAddress(address);
@@ -89,11 +87,7 @@ export class Web3Wrapper {
     public updatePrevUserAddress(userAddress: string) {
         this._prevUserAddress = userAddress;
     }
-    private async _getNetworkAsync() {
-        const networkId = await promisify(this._web3.version.getNetwork)();
-        return networkId;
-    }
-    private async _startEmittingNetworkConnectionAndUserBalanceStateAsync() {
+    public startEmittingNetworkConnectionAndUserBalanceState() {
         if (!_.isUndefined(this._watchNetworkAndBalanceIntervalId)) {
             return; // we are already emitting the state
         }
@@ -101,41 +95,52 @@ export class Web3Wrapper {
         let prevNodeVersion: string;
         this._prevUserEtherBalanceInEth = new BigNumber(0);
         this._dispatcher.updateNetworkId(this._prevNetworkId);
-        this._watchNetworkAndBalanceIntervalId = intervalUtils.setAsyncExcludingInterval(async () => {
-            // Check for network state changes
-            const currentNetworkId = await this.getNetworkIdIfExists();
-            if (currentNetworkId !== this._prevNetworkId) {
-                this._prevNetworkId = currentNetworkId;
-                this._dispatcher.updateNetworkId(currentNetworkId);
-            }
-
-            // Check for node version changes
-            const currentNodeVersion = await this.getNodeVersionAsync();
-            if (currentNodeVersion !== prevNodeVersion) {
-                prevNodeVersion = currentNodeVersion;
-                this._dispatcher.updateNodeVersion(currentNodeVersion);
-            }
-
-            if (this._shouldPollUserAddress) {
-                const userAddressIfExists = await this.getFirstAccountIfExistsAsync();
-                // Update makerAddress on network change
-                if (this._prevUserAddress !== userAddressIfExists) {
-                    this._prevUserAddress = userAddressIfExists;
-                    this._dispatcher.updateUserAddress(userAddressIfExists);
+        this._watchNetworkAndBalanceIntervalId = intervalUtils.setAsyncExcludingInterval(
+            async () => {
+                // Check for network state changes
+                const currentNetworkId = await this.getNetworkIdIfExists();
+                if (currentNetworkId !== this._prevNetworkId) {
+                    this._prevNetworkId = currentNetworkId;
+                    this._dispatcher.updateNetworkId(currentNetworkId);
                 }
 
-                // Check for user ether balance changes
-                if (userAddressIfExists !== '') {
-                    await this._updateUserEtherBalanceAsync(userAddressIfExists);
+                // Check for node version changes
+                const currentNodeVersion = await this.getNodeVersionAsync();
+                if (currentNodeVersion !== prevNodeVersion) {
+                    prevNodeVersion = currentNodeVersion;
+                    this._dispatcher.updateNodeVersion(currentNodeVersion);
                 }
-            } else {
-                // This logic is primarily for the Ledger, since we don't regularly poll for the address
-                // we simply update the balance for the last fetched address.
-                if (!_.isEmpty(this._prevUserAddress)) {
-                    await this._updateUserEtherBalanceAsync(this._prevUserAddress);
+
+                if (this._shouldPollUserAddress) {
+                    const userAddressIfExists = await this.getFirstAccountIfExistsAsync();
+                    // Update makerAddress on network change
+                    if (this._prevUserAddress !== userAddressIfExists) {
+                        this._prevUserAddress = userAddressIfExists;
+                        this._dispatcher.updateUserAddress(userAddressIfExists);
+                    }
+
+                    // Check for user ether balance changes
+                    if (!_.isEmpty(userAddressIfExists)) {
+                        await this._updateUserEtherBalanceAsync(userAddressIfExists);
+                    }
+                } else {
+                    // This logic is primarily for the Ledger, since we don't regularly poll for the address
+                    // we simply update the balance for the last fetched address.
+                    if (!_.isEmpty(this._prevUserAddress)) {
+                        await this._updateUserEtherBalanceAsync(this._prevUserAddress);
+                    }
                 }
-            }
-        }, 5000);
+            },
+            5000,
+            (err: Error) => {
+                utils.consoleLog(`Watching network and balances failed: ${err.stack}`);
+                this._stopEmittingNetworkConnectionAndUserBalanceStateAsync();
+            },
+        );
+    }
+    private async _getNetworkAsync() {
+        const networkId = await promisify(this._web3.version.getNetwork)();
+        return networkId;
     }
     private async _updateUserEtherBalanceAsync(userAddress: string) {
         const balance = await this.getBalanceInEthAsync(userAddress);
@@ -145,6 +150,8 @@ export class Web3Wrapper {
         }
     }
     private _stopEmittingNetworkConnectionAndUserBalanceStateAsync() {
-        clearInterval(this._watchNetworkAndBalanceIntervalId);
+        if (!_.isUndefined(this._watchNetworkAndBalanceIntervalId)) {
+            intervalUtils.clearAsyncExcludingInterval(this._watchNetworkAndBalanceIntervalId);
+        }
     }
 }

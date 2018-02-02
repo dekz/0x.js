@@ -1,4 +1,4 @@
-import { BlockchainLifecycle } from '@0xproject/dev-utils';
+import { BlockchainLifecycle, devConstants, web3Factory } from '@0xproject/dev-utils';
 import { BigNumber } from '@0xproject/utils';
 import * as chai from 'chai';
 import * as _ from 'lodash';
@@ -25,11 +25,10 @@ import { constants } from './utils/constants';
 import { FillScenarios } from './utils/fill_scenarios';
 import { reportNodeCallbackErrors } from './utils/report_callback_errors';
 import { TokenUtils } from './utils/token_utils';
-import { web3Factory } from './utils/web3_factory';
 
 chaiSetup.configure();
 const expect = chai.expect;
-const blockchainLifecycle = new BlockchainLifecycle(constants.RPC_URL);
+const blockchainLifecycle = new BlockchainLifecycle();
 
 const NON_EXISTENT_ORDER_HASH = '0x79370342234e7acd6bbeac335bd3bb1d368383294b64b8160a00f4060e4d3777';
 
@@ -390,6 +389,29 @@ describe('ExchangeWrapper', () => {
                     ).to.not.be.rejectedWith(ExchangeContractErrs.OrderFillAmountZero);
                 });
             });
+            describe('negative fill amount', async () => {
+                let signedOrder: SignedOrder;
+                const negativeFillTakerAmount = new BigNumber(-100);
+                beforeEach(async () => {
+                    signedOrder = await fillScenarios.createFillableSignedOrderAsync(
+                        makerTokenAddress,
+                        takerTokenAddress,
+                        makerAddress,
+                        takerAddress,
+                        fillableAmount,
+                    );
+                });
+                it('should not allow the exchange wrapper to fill if amount is negative', async () => {
+                    return expect(
+                        zeroEx.exchange.fillOrderAsync(
+                            signedOrder,
+                            negativeFillTakerAmount,
+                            shouldThrowOnInsufficientBalanceOrAllowance,
+                            takerAddress,
+                        ),
+                    ).to.be.rejected();
+                });
+            });
         });
         describe('#batchFillOrdersAsync', () => {
             let signedOrder: SignedOrder;
@@ -496,6 +518,30 @@ describe('ExchangeWrapper', () => {
                             },
                         ),
                     ).to.not.be.rejectedWith(ExchangeContractErrs.OrderFillAmountZero);
+                });
+            });
+            describe('negative batch fill amount', async () => {
+                beforeEach(async () => {
+                    const negativeFillTakerAmount = new BigNumber(-100);
+                    orderFillBatch = [
+                        {
+                            signedOrder,
+                            takerTokenFillAmount,
+                        },
+                        {
+                            signedOrder: anotherSignedOrder,
+                            takerTokenFillAmount: negativeFillTakerAmount,
+                        },
+                    ];
+                });
+                it('should not allow the exchange wrapper to batch fill if any amount is negative', async () => {
+                    return expect(
+                        zeroEx.exchange.batchFillOrdersAsync(
+                            orderFillBatch,
+                            shouldThrowOnInsufficientBalanceOrAllowance,
+                            takerAddress,
+                        ),
+                    ).to.be.rejected();
                 });
             });
         });
@@ -875,7 +921,7 @@ describe('ExchangeWrapper', () => {
             );
         });
         afterEach(async () => {
-            zeroEx.exchange.unsubscribeAll();
+            zeroEx.exchange._unsubscribeAll();
         });
         // Hack: Mocha does not allow a test to be both async and have a `done` callback
         // Since we need to await the receipt of the event in the `subscribe` callback,
